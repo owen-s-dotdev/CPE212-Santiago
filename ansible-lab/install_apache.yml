@@ -1,0 +1,35 @@
+---
+- hosts: linuxservers
+  become: true
+  tasks:
+
+    - name: Update Repository Index Ubuntu
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian" # for Ubuntu
+
+    - name: Update Repository Index CentOS
+      dnf:
+        update_cache: yes
+      when: ansible_os_family == "RedHat" # for CentOS
+
+    - name: Install Apache2 package Ubuntu
+      apt:
+        name: apache2
+      when: ansible_os_family == "Debian" # for Ubuntu
+
+    - name: Install Apache2 package CentOS
+      dnf:
+        name: httpd
+      when: ansible_os_family == "RedHat" # for CentOS
+    
+    - name: Add PHP support for Apache Ubuntu
+      apt:
+        name: libapache2-mod-php
+      when: ansible_os_family == "Debian" # for Ubuntu
+
+    - name: Add PHP support for Apache CentOS
+      dnf:
+        name: php
+      when: ansible_os_family == "RedHat" # for CentOS
+
