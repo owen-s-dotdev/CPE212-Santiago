@@ -1,18 +1,19 @@
-# HOME INVENTORY FILE
+# LAB INVENTORY FILE
 all:
   children:
     ubuntu:
       vars:
         apache_package: apache2
         php_package: libapache2-mod-php
+
       hosts:
         ubuntu1:
-          ansible_host: 192.168.56.102
+          ansible_host: 192.168.56.114
           ansible_user: server1
         
         ubuntu2:
-          ansible_host: 192.168.56.103
-          ansible_user: server2
+          ansible_host: 192.168.56.115
+          ansible_user: santiagoserver2
 
     centos:
       vars:
@@ -20,7 +21,7 @@ all:
         php_package: php
       hosts:
         centos1:
-          ansible_host: 192.168.56.104
+          ansible_host: 192.168.56.118
           ansible_user: santiago
     
     redhat:
