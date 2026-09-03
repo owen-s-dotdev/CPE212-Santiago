@@ -36,4 +36,27 @@
         - php
       state: latest
       update_cache: yes
-    when: ansible_distribution == "CentOS" # for CentOSS
+    when: ansible_distribution == "CentOS" # for CentOS
+  
+
+- hosts: db_servers
+  become: true
+  tasks:
+
+  - name: install mariadb package (CentOS)
+    yum:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "CentOS"
+
+  - name: "Mariadb- Restarting/Enabling"
+    service:
+      name: mariadb
+      state: restarted
+      enabled: true
+
+  - name: install mariadb packege (Ubuntu)
+    apt:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
