@@ -13,7 +13,7 @@
   - name: install updates (Ubuntu)
     tags: always
     apt:
-      upgrade: dist
+      #upgrade: dist
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
 
@@ -23,7 +23,7 @@
   tasks:
 
   - name: Install Apache2 package and PHP Support Ubuntu
-    tags: apache,apache2,ubuntu
+    tags: apache, apache2, ubuntu
     apt:
       name: 
         - apache2
@@ -33,7 +33,7 @@
     when: ansible_distribution == "Ubuntu" # for Ubuntu
 
   - name: Install Apache2 package and PHP Support CentOS
-    tags: apache,centos,httpd
+    tags: apache, centos, httpd
     dnf:
       name: 
         - httpd
@@ -41,6 +41,14 @@
       state: latest
       update_cache: yes
     when: ansible_distribution == "CentOS" # for CentOS
+
+  - name: start httpd (CentOS)
+    tags: apache, centos, httpd
+    service:
+      name: httpd
+      state: started
+      enabled: true
+    when: ansible_distribution == "CentOS"
   
 
 - hosts: db_servers
@@ -48,11 +56,18 @@
   tasks:
 
   - name: install mariadb package (CentOS)
-    tags: centos, db,mariadb
+    tags: centos, db, mariadb
     dnf:
       name: mariadb-server
       state: latest
     when: ansible_distribution == "CentOS"
+
+  - name: install mariadb packege (Ubuntu)
+    tags: db, mariadb, ubuntu
+    apt:
+      name: mariadb-server
+      state: latest
+    when: ansible_distribution == "Ubuntu"
 
   - name: "Mariadb- Restarting/Enabling"
     service:
@@ -60,12 +75,7 @@
       state: restarted
       enabled: true
 
-  - name: install mariadb packege (Ubuntu)
-    tags: db, mariadb,ubuntu
-    apt:
-      name: mariadb-server
-      state: latest
-    when: ansible_distribution == "Ubuntu"
+
 
 - hosts: file_servers
   become: true
@@ -77,10 +87,3 @@
       name: samba
       state: latest
   
-  - name: start httpd (CentOS)
-    tags: apache, centos, httpd
-    service:
-      name: httpd
-      state: started
-      enabled: true
-    when: ansible_distribution == "CentOS"
