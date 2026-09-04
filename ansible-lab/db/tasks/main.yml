@@ -1,3 +1,27 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for db
+
+- name: install mariadb package (CentOS)
+  tags: centos, db, mariadb
+  dnf:
+    name: mariadb-server
+    state: latest
+  when: ansible_distribution == "CentOS"
+
+- name: install mariadb packege (Ubuntu)
+  tags: db, mariadb, ubuntu
+  apt:
+    name: mariadb-server
+    state: latest
+  when: ansible_distribution == "Ubuntu"
+
+- name: "Mariadb- Restarting/Enabling"
+  service:
+    name: mariadb
+    state: restarted
+    enabled: true
+
+- name: "Print Confirm if Successful"
+  debug:
+    msg: "MariaDB is installed and running successfully."
