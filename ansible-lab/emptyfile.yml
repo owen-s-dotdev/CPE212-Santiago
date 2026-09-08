@@ -1,0 +1,9 @@
+---
+- name: Create an empty file
+  hosts: web_servers
+  tasks:
+    - name: Create ansible_test.txt
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/ansible_test.txt"
+        state: touch
+        
