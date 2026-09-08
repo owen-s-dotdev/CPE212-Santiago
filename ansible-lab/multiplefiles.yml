@@ -1,0 +1,14 @@
+---
+- name: Create multiple files
+  hosts: web_servers
+  tasks:
+    - name: Create multiple files
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+        state: touch
+      loop:
+        - file1.txt
+        - file2.txt
+        - file3.txt
+
+        
