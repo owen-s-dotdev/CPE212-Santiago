@@ -17,39 +17,17 @@
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
 
-
 - hosts: workstations
   become: true
-  tags: workstation
-  tasks:
-    - name: install unzip
-      package:
-        name: unzip
-
-    - name: install terraform
-      unarchive:
-        src: https://releases.hashicorp.com/terraform/0.12.28/terraform_0.12.28_linux_amd64.zip
-        dest: /usr/local/bin
-        remote_src: yes
-        mode: 0755
-        owner: root
-        group: root
+  roles:
+    - role: workstations
+      tags: workstation
 
 - hosts: web_servers
   become: true
   roles:
     - role: web
       tags: web
-  tasks:  
-  - name: copy default html file for site   
-    tags: apache, apache2, httpd
-    ansible.builtin.copy:
-      src: files/default_site.html 
-      dest: /var/www/html/index.html 
-      owner: root
-      group: root 
-      mode: '0644'
-
 
 - hosts: db_servers
   become: true
@@ -59,11 +37,6 @@
 
 - hosts: file_servers
   become: true
-  tasks:
-
-  - name: install samba package
-    tags: samba 
-    package:
-      name: samba
-      state: latest
-  
+  roles:
+    - role: file_servers
+      tags: file_server

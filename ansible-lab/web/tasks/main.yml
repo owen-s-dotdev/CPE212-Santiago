@@ -33,3 +33,12 @@
 - name: "Print Confirm if Successful"
   debug:
     msg: "Apache and PHP are installed and running successfully."
+
+- name: copy default html file for site   
+  tags: apache, apache2, httpd, copy_html
+  ansible.builtin.copy:
+    src: files/default_site.html 
+    dest: /var/www/html/index.html 
+    owner: root
+    group: root 
+    mode: '0644'
