@@ -27,6 +27,10 @@ all:
         ubuntu1:
           ansible_host: 192.168.56.102
           ansible_user: server1
+        centos1:
+          ansible_host: 192.168.56.104
+          ansible_user: santiago
+
     
     db_servers:
       hosts:
