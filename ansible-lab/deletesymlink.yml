@@ -1,0 +1,7 @@
+- name: Delete a symbolic link
+  hosts: web_servers
+  tasks:
+    - name: Remove symbolic link
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/source_link.txt"
+        state: absent
