@@ -1,0 +1,9 @@
+---
+- name: Change file permissions
+  hosts: web_servers
+  tasks:
+    - name: Create permission test file
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/permission_test.txt"
+        state: touch
+        mode: '0644'
