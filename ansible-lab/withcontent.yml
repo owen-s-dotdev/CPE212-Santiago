@@ -1,0 +1,12 @@
+---
+- name: Create a file with content
+  hosts: web_servers
+  tasks:
+    - name: Create a student information file
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/student_info.txt"
+        content: |
+          Name: David Owen Santiago
+          Course: Computer Engineering 
+          Topic: Ansible File Module 
+          
