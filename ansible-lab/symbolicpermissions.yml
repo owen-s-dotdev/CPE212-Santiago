@@ -1,0 +1,8 @@
+- name: Set symbolic permissions
+  hosts: web_servers
+  tasks:
+    - name: Create symbolic permission directory
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/symbolic-test"
+        state: directory
+        mode: 'u=rwx,g=rx,o=rx'

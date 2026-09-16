@@ -1,0 +1,8 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for file_servers
+- name: install samba package
+  tags: samba 
+  package:
+    name: samba
+    state: latest

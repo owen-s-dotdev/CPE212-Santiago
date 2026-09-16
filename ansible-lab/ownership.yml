@@ -1,0 +1,11 @@
+- name: Change ownership and group
+  hosts: web_servers
+  become: true
+  tasks:
+    - name: Create ownership test directory
+      ansible.builtin.file:
+        path: /tmp/ansible-ownership-test
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
