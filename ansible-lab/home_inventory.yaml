@@ -1,4 +1,4 @@
-# LAB INVENTORY FILE
+# HOME INVENTORY FILE
 all:
   children:
     ubuntu:
