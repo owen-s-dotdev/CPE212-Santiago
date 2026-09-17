@@ -4,17 +4,17 @@ all:
     ubuntu:
       hosts:
         ubuntu1:
-          ansible_host: 192.168.56.102
+          ansible_host: 192.168.56.114
           ansible_user: server1
         
         ubuntu2:
-          ansible_host: 192.168.56.103
+          ansible_host: 192.168.56.115
           ansible_user: server2
 
     centos:
       hosts:
         centos1:
-          ansible_host: 192.168.56.104
+          ansible_host: 192.168.56.118
           ansible_user: santiago
     
     redhat:
@@ -25,29 +25,29 @@ all:
     web_servers:
       hosts:
         ubuntu1:
-          ansible_host: 192.168.56.102
+          ansible_host: 192.168.56.114
           ansible_user: server1
         centos1:
-          ansible_host: 192.168.56.104
+          ansible_host: 192.168.56.118
           ansible_user: santiago
 
     
     db_servers:
       hosts:
         ubuntu2:
-          ansible_host: 192.168.56.103
+          ansible_host: 192.168.56.115
           ansible_user: server2
     
     file_servers:
       hosts:
         centos1:
-          ansible_host: 192.168.56.104
+          ansible_host: 192.168.56.118
           ansible_user: santiago
 
     workstations:
       hosts:
         ubuntu1:
-          ansible_host: 192.168.56.102
+          ansible_host: 192.168.56.114
           ansible_user: server1
  
     linuxservers:
