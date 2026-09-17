@@ -1,0 +1,232 @@
+---
+- name: Install and Configure Nagios Core and Nagios Plugins
+  hosts: nagios_servers
+  become: yes
+  vars:
+    nagiosadmin_password: "santiago_nagios"
+
+  tasks:
+    # Step 1: Install prerequisite packages for Nagios Core
+    - name: Step 1 - Install Nagios Core prerequisite packages
+      ansible.builtin.apt:
+        name:
+          - autoconf
+          - gcc
+          - libc6
+          - make
+          - wget
+          - unzip
+          - apache2
+          - php
+          - libapache2-mod-php
+          - libgd-dev
+          - ufw
+          - openssl
+          - libssl-dev
+        state: present
+        update_cache: yes
+
+    # Step 2: Download and extract Nagios Core source code
+    - name: Step 2 - Create build directory for Nagios Core
+      ansible.builtin.file:
+        path: /tmp/nagios-build
+        state: directory
+        mode: '0755'
+
+    - name: Step 2 - Download and extract Nagios Core source archive
+      ansible.builtin.unarchive:
+        src: https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.4.14/nagios-4.4.14.tar.gz
+        dest: /tmp/nagios-build
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        creates: /tmp/nagios-build/configure
+
+    # Step 3: Configure and compile Nagios Core
+    - name: Step 3 - Run configure script
+      ansible.builtin.command:
+        cmd: ./configure --with-httpd-conf=/etc/apache2/sites-enabled
+        chdir: /tmp/nagios-build
+        creates: /tmp/nagios-build/Makefile
+
+    - name: Step 3 - Compile Nagios Core
+      ansible.builtin.command:
+        cmd: make all
+        chdir: /tmp/nagios-build
+        creates: /tmp/nagios-build/base/nagios
+
+    # Step 4: Create users and groups
+    - name: Step 4 - Install Nagios user and group
+      ansible.builtin.command:
+        cmd: make install-groups-users
+        chdir: /tmp/nagios-build
+      register: nagios_user_check
+      changed_when: false
+
+    - name: Step 4 - Add www-data user to nagios group
+      ansible.builtin.user:
+        name: www-data
+        groups: nagios
+        append: yes
+
+    # Step 5: Install binary files
+    - name: Step 5 - Install binaries
+      ansible.builtin.command:
+        cmd: make install
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/bin/nagios
+
+    # Step 6: Install daemon / systemd service
+    - name: Step 6 - Install systemd service
+      ansible.builtin.command:
+        cmd: make install-daemoninit
+        chdir: /tmp/nagios-build
+        creates: /lib/systemd/system/nagios.service
+
+    # Step 7: Install command mode permissions
+    - name: Step 7 - Install external command mode permissions
+      ansible.builtin.command:
+        cmd: make install-commandmode
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/var/rw
+
+    # Step 8: Install sample configuration files
+    - name: Step 8 - Install sample configuration files
+      ansible.builtin.command:
+        cmd: make install-config
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/etc/nagios.cfg
+
+    # Step 9: Install Apache web config and enable modules
+    - name: Step 9 - Install Apache web configuration
+      ansible.builtin.command:
+        cmd: make install-webconf
+        chdir: /tmp/nagios-build
+        creates: /etc/apache2/sites-enabled/nagios.conf
+      notify: Restart Apache
+
+    - name: Step 9 - Enable Apache rewrite and cgi modules
+      community.general.apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - cgi
+      notify: Restart Apache
+
+    # Step 10: Configure Firewall (UFW)
+    - name: Step 10 - Allow Apache traffic through UFW
+      community.general.ufw:
+        rule: allow
+        name: Apache
+
+    - name: Step 10 - Reload UFW rules
+      community.general.ufw:
+        state: reloaded
+
+    # Step 11: Create web login user (nagiosadmin)
+    - name: Step 11 - Create htpasswd file for nagiosadmin
+      community.general.htpasswd:
+        path: /usr/local/nagios/etc/htpasswd.users
+        name: nagiosadmin
+        password: "{{ nagiosadmin_password }}"
+        owner: www-data
+        group: www-data
+        mode: '0640'
+
+    # Step 12: Ensure Apache service is started
+    - name: Step 12 - Ensure Apache service is running
+      ansible.builtin.systemd:
+        name: apache2
+        state: started
+        enabled: yes
+
+    # Step 13: Start Nagios service
+    - name: Step 13 - Enable and start Nagios service
+      ansible.builtin.systemd:
+        name: nagios
+        state: started
+        enabled: yes
+
+    # =========================================================================
+    # MANUAL STEP 14:
+    # Open your web browser and navigate to:
+    #   http://<SERVER_IP>/nagios  OR  http://<SERVER_HOSTNAME>/nagios
+    # Authenticate using username 'nagiosadmin' and your configured password
+    # to verify that the Nagios Web Interface loads properly.
+    # =========================================================================
+
+    # Step 15: Install Nagios Plugins prerequisites
+    - name: Step 15 - Install Nagios Plugins prerequisite packages
+      ansible.builtin.apt:
+        name:
+          - autoconf
+          - gcc
+          - libc6
+          - libmcrypt-dev
+          - make
+          - libssl-dev
+          - wget
+          - bc
+          - gawk
+          - dc
+          - build-essential
+          - snmp
+          - libnet-snmp-perl
+          - gettext
+          - iputils-ping
+        state: present
+
+    # Step 16: Download and extract Nagios Plugins
+    - name: Step 16 - Create build directory for Nagios Plugins
+      ansible.builtin.file:
+        path: /tmp/nagios-plugins-build
+        state: directory
+        mode: '0755'
+
+    - name: Step 16 - Download and extract Nagios Plugins archive
+      ansible.builtin.unarchive:
+        src: https://github.com/nagios-plugins/nagios-plugins/releases/download/release-2.4.8/nagios-plugins-2.4.8.tar.gz
+        dest: /tmp/nagios-plugins-build
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        creates: /tmp/nagios-plugins-build/configure
+
+    # Step 17: Configure, compile, and install Nagios Plugins
+    - name: Step 17 - Configure Nagios Plugins
+      ansible.builtin.command:
+        cmd: ./configure
+        chdir: /tmp/nagios-plugins-build
+        creates: /tmp/nagios-plugins-build/Makefile
+
+    - name: Step 17 - Compile Nagios Plugins
+      ansible.builtin.command:
+        cmd: make
+        chdir: /tmp/nagios-plugins-build
+        creates: /tmp/nagios-plugins-build/plugins/check_ping
+
+    - name: Step 17 - Install Nagios Plugins
+      ansible.builtin.command:
+        cmd: make install
+        chdir: /tmp/nagios-plugins-build
+        creates: /usr/local/nagios/libexec/check_ping
+      notify: Restart Nagios
+
+    # =========================================================================
+    # MANUAL STEP 18:
+    # Access the Nagios Web Interface again in your browser and confirm that 
+    # service monitoring checks (e.g., Ping, Disk, HTTP) are operational 
+    # without missing plugin errors.
+    # =========================================================================
+
+    # Step 19: Handled automatically via handlers when changes occur
+
+  handlers:
+    - name: Restart Apache
+      ansible.builtin.systemd:
+        name: apache2
+        state: restarted
+
+    - name: Restart Nagios
+      ansible.builtin.systemd:
+        name: nagios
+        state: restarted
