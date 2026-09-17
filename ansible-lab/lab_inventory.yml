@@ -9,7 +9,7 @@ all:
         
         ubuntu2:
           ansible_host: 192.168.56.115
-          ansible_user: server2
+          ansible_user: santiagoserver2
 
     centos:
       hosts:
@@ -36,7 +36,7 @@ all:
       hosts:
         ubuntu2:
           ansible_host: 192.168.56.115
-          ansible_user: server2
+          ansible_user: santiagoserver2
     
     file_servers:
       hosts:
