@@ -26,6 +26,28 @@
         state: present
         update_cache: yes
 
+    - name: Step 1 - Install Nagios Core prerequisite packages
+      ansible.builtin.dnf:
+      name:
+        - autoconf
+          - gcc
+          - libc6
+          - make
+          - wget
+          - unzip
+          - apache2
+          - php
+          - libapache2-mod-php
+          - libgd-dev
+          - ufw
+          - openssl
+          - libssl-dev
+      state: present
+      update_cache: yes
+      when_ansible_distribution: CentOS
+
+
+
     # Step 2: Download and extract Nagios Core source code
     - name: Step 2 - Create build directory for Nagios Core
       ansible.builtin.file:
