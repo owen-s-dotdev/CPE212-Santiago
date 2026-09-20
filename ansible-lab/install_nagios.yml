@@ -26,6 +26,17 @@
     web_server_service: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
     web_server_user: "{{ 'www-data' if ansible_facts['os_family'] == 'Debian' else 'apache' }}"
 
+  handlers:
+    - name: Restart Web Server
+      ansible.builtin.systemd:
+        name: "{{ web_server_service }}"
+        state: restarted
+
+    - name: Restart Nagios
+      ansible.builtin.systemd:
+        name: nagios
+        state: restarted
+
   tasks:
     # Step 0: Configure SELinux (CentOS / RHEL only)
     - name: Step 0 - Set SELinux to permissive mode on RedHat systems
@@ -230,8 +241,8 @@
         state: started
         enabled: yes
 
-    # Step 15: Install Nagios Plugins prerequisites (Ubuntu/Debian)
-    - name: Step 15 - Install Nagios Plugins prerequisite packages (Ubuntu/Debian)
+    # Step 14: Install Nagios Plugins prerequisites (Ubuntu/Debian)
+    - name: Step 14 - Install Nagios Plugins prerequisite packages (Ubuntu/Debian)
       ansible.builtin.apt:
         name:
           - autoconf
@@ -252,14 +263,14 @@
         state: present
       when: ansible_facts['os_family'] == 'Debian'
 
-    # Step 16: Download and extract Nagios Plugins
-    - name: Step 16 - Create build directory for Nagios Plugins
+    # Step 15: Download and extract Nagios Plugins
+    - name: Step 15 - Create build directory for Nagios Plugins
       ansible.builtin.file:
         path: /tmp/nagios-plugins-build
         state: directory
         mode: '0755'
 
-    - name: Step 16 - Download and extract Nagios Plugins archive
+    - name: Step 15 - Download and extract Nagios Plugins archive
       ansible.builtin.unarchive:
         src: https://github.com/nagios-plugins/nagios-plugins/releases/download/release-2.4.8/nagios-plugins-2.4.8.tar.gz
         dest: /tmp/nagios-plugins-build
@@ -267,20 +278,20 @@
         extra_opts: [--strip-components=1]
         creates: /tmp/nagios-plugins-build/configure
 
-    # Step 17: Configure, compile, and install Nagios Plugins
-    - name: Step 17 - Configure Nagios Plugins
+    # Step 16: Configure, compile, and install Nagios Plugins
+    - name: Step 16 - Configure Nagios Plugins
       ansible.builtin.command:
         cmd: ./configure
         chdir: /tmp/nagios-plugins-build
         creates: /tmp/nagios-plugins-build/Makefile
 
-    - name: Step 17 - Compile Nagios Plugins
+    - name: Step 16 - Compile Nagios Plugins
       ansible.builtin.command:
         cmd: make
         chdir: /tmp/nagios-plugins-build
         creates: /tmp/nagios-plugins-build/plugins/check_ping
 
-    - name: Step 17 - Install Nagios Plugins
+    - name: Step 16 - Install Nagios Plugins
       ansible.builtin.command:
         cmd: make install
         chdir: /tmp/nagios-plugins-build
@@ -289,13 +300,3 @@
          - Restart Nagios
          - Restart Web Server
 
-  handlers:
-    - name: Restart Web Server
-      ansible.builtin.systemd:
-        name: "{{ web_server_service }}"
-        state: restarted
-
-    - name: Restart Nagios
-      ansible.builtin.systemd:
-        name: nagios
-        state: restarted
