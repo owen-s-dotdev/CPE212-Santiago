@@ -72,5 +72,3 @@ cd /tmp/nagios-plugins-*/
 sudo ./configure
 sudo make
 sudo make install
-
-
