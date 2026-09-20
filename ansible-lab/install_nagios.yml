@@ -4,6 +4,7 @@
   become: true
   vars:
     nagiosadmin_password: "santiago_nagios"
+    nagios_user: nagiosadmin
     web_server_service: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
     web_server_user: "{{ 'www-data' if ansible_facts['os_family'] == 'Debian' else 'apache' }}"
 
@@ -194,7 +195,7 @@
     # Step 11: Create web login user (nagiosadmin)
     - name: Step 11 - Create htpasswd file for nagiosadmin
       ansible.builtin.command:
-        cmd: htpasswd -b -c /usr/local/nagios/etc/htpasswd.users nagiosadmin "{{ nagiosadmin_password }}"
+        cmd: htpasswd -b -c /usr/local/nagios/etc/htpasswd.users "{{ nagios_user }}" "{{ nagiosadmin_password }}"
         creates: /usr/local/nagios/etc/htpasswd.users
 
     # Step 12: Ensure Web Server service is started
