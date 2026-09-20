@@ -1,7 +1,7 @@
 ---
 - name: Install and Configure Nagios Core and Nagios Plugins
-  hosts: nagios_servers
-  become: yes
+  hosts: web_servers
+  become: true
   vars:
     nagiosadmin_password: "santiago_nagios"
     web_server_service: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
