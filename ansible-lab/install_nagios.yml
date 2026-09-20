@@ -271,7 +271,9 @@
         cmd: make install
         chdir: /tmp/nagios-plugins-build
         creates: /usr/local/nagios/libexec/check_ping
-      notify: Restart Nagios
+      notify:
+         - Restart Nagios
+         - Restart Web Server
 
   handlers:
     - name: Restart Web Server
