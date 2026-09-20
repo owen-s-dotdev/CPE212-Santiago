@@ -299,4 +299,3 @@
       notify:
          - Restart Nagios
          - Restart Web Server
-
