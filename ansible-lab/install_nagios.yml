@@ -194,13 +194,9 @@
 
     # Step 11: Create web login user (nagiosadmin)
     - name: Step 11 - Create htpasswd file for nagiosadmin
-      community.general.htpasswd:
-        path: /usr/local/nagios/etc/htpasswd.users
-        name: nagiosadmin
-        password: "{{ nagiosadmin_password }}"
-        owner: "{{ web_server_user }}"
-        group: "{{ web_server_user }}"
-        mode: '0640'
+      ansible.builtin.command:
+        cmd: htpasswd -b -c /usr/local/nagios/etc/htpasswd.users nagiosadmin "{{ nagiosadmin_password }}"
+        creates: /usr/local/nagios/etc/htpasswd.users
 
     # Step 12: Ensure Web Server service is started
     - name: Step 12 - Ensure Web Server service is running
