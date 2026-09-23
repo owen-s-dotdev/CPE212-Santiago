@@ -5,6 +5,25 @@
   vars:
     prometheus_version: "2.52.0"
 
+  # update and upgrade packages
+  pre_tasks:
+
+    - name: Update repository cache and upgrade packages (CentOS / RHEL)
+      tags: always
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+        update_only: true
+      when: ansible_os_family == "RedHat"
+
+    - name: Update repository cache and upgrade packages (Ubuntu / Debian)
+      tags: always
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
   handlers:
     # [Ubuntu/CentOS]: sudo systemctl daemon-reload
     - name: Reload systemd
@@ -21,31 +40,6 @@
     # =========================================================================
     # TASK 1: PREPARE THE SERVER
     # =========================================================================
-
-    # [Ubuntu]: sudo apt update
-    - name: Update package repository cache (Debian/Ubuntu)
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_os_family == "Debian"
-
-    # [CentOS]: sudo dnf check-update
-    - name: Update package repository cache (RedHat/CentOS)
-      ansible.builtin.dnf:
-        update_cache: true
-      when: ansible_os_family == "RedHat"
-
-    # [Ubuntu]: sudo apt upgrade -y
-    - name: Upgrade installed packages (Debian/Ubuntu)
-      ansible.builtin.apt:
-        upgrade: dist
-      when: ansible_os_family == "Debian"
-
-    # [CentOS]: sudo dnf upgrade -y
-    - name: Upgrade installed packages (RedHat/CentOS)
-      ansible.builtin.dnf:
-        name: "*"
-        state: latest
-      when: ansible_os_family == "RedHat"
 
     # [Ubuntu]: sudo apt install -y wget tar curl
     # [CentOS]: sudo dnf install -y wget tar curl
