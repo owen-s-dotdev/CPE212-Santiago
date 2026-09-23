@@ -1,0 +1,301 @@
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+  - name: install updates (CentOS)
+    tags: always
+    dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: install updates (Ubuntu)
+    tags: always
+    apt:
+      upgrade: dist
+      update_cache: yes
+    when: ansible_distribution == "Ubuntu"
+
+- name: Install and Configure Nagios Core and Nagios Plugins
+  hosts: web_servers
+  become: true
+  vars:
+    nagiosadmin_password: "santiago_nagios"
+    nagios_user: nagiosadmin
+    web_server_service: "{{ 'apache2' if ansible_facts['os_family'] == 'Debian' else 'httpd' }}"
+    web_server_user: "{{ 'www-data' if ansible_facts['os_family'] == 'Debian' else 'apache' }}"
+
+  handlers:
+    - name: Restart Web Server
+      ansible.builtin.systemd:
+        name: "{{ web_server_service }}"
+        state: restarted
+
+    - name: Restart Nagios
+      ansible.builtin.systemd:
+        name: nagios
+        state: restarted
+
+  tasks:
+    # Step 0: Configure SELinux (CentOS / RHEL only)
+    - name: Step 0 - Set SELinux to permissive mode on RedHat systems
+      ansible.posix.selinux:
+        policy: targeted
+        state: permissive
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Step 1: Install prerequisite packages for Debian/Ubuntu
+    - name: Step 1 - Install Nagios Core prerequisite packages (Ubuntu/Debian)
+      ansible.builtin.apt:
+        name:
+          - autoconf
+          - gcc
+          - libc6
+          - make
+          - wget
+          - unzip
+          - apache2
+          - php
+          - libapache2-mod-php
+          - libgd-dev
+          - ufw
+          - openssl
+          - libssl-dev
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # Step 1: Install prerequisite packages for CentOS/RHEL
+    - name: Step 1 - Install Nagios Core prerequisite packages (CentOS/RHEL)
+      ansible.builtin.dnf:
+        name:
+          - gcc
+          - glibc
+          - glibc-common
+          - make
+          - gettext
+          - automake
+          - autoconf
+          - gd
+          - gd-devel
+          - perl
+          - net-snmp
+          - net-snmp-utils
+          - openssl-devel
+          - epel-release
+          - wget
+          - tar
+          - httpd
+          - php
+          - php-cli
+          - firewalld
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Step 1 - Install perl-Net-SNMP with PowerTools/CRB and EPEL enabled (CentOS/RHEL)
+      ansible.builtin.dnf:
+        name: perl-Net-SNMP
+        enablerepo:
+          - epel
+          - "{{ 'crb' if ansible_facts['distribution_major_version'] | int >= 9 else 'powertools' }}"
+        state: present
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Step 2: Download and extract Nagios Core source code
+    - name: Step 2 - Create build directory for Nagios Core
+      ansible.builtin.file:
+        path: /tmp/nagios-build
+        state: directory
+        mode: '0755'
+
+    - name: Step 2 - Download and extract Nagios Core source archive
+      ansible.builtin.unarchive:
+        src: https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-4.4.14/nagios-4.4.14.tar.gz
+        dest: /tmp/nagios-build
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        creates: /tmp/nagios-build/configure
+
+    # Step 3: Configure and compile Nagios Core
+    - name: Step 3 - Run configure script (Ubuntu/Debian)
+      ansible.builtin.command:
+        cmd: ./configure --with-httpd-conf=/etc/apache2/sites-enabled
+        chdir: /tmp/nagios-build
+        creates: /tmp/nagios-build/Makefile
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Step 3 - Run configure script (CentOS/RHEL)
+      ansible.builtin.command:
+        cmd: ./configure
+        chdir: /tmp/nagios-build
+        creates: /tmp/nagios-build/Makefile
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Step 3 - Compile Nagios Core
+      ansible.builtin.command:
+        cmd: make all
+        chdir: /tmp/nagios-build
+        creates: /tmp/nagios-build/base/nagios
+
+    # Step 4: Create users and groups
+    - name: Step 4 - Install Nagios user and group
+      ansible.builtin.command:
+        cmd: make install-groups-users
+        chdir: /tmp/nagios-build
+      register: nagios_user_check
+      changed_when: false
+
+    - name: Step 4 - Add web server user to nagios group
+      ansible.builtin.user:
+        name: "{{ web_server_user }}"
+        groups: nagios
+        append: yes
+
+    # Step 5: Install binary files
+    - name: Step 5 - Install binaries
+      ansible.builtin.command:
+        cmd: make install
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/bin/nagios
+
+    # Step 6: Install daemon / systemd service
+    - name: Step 6 - Install systemd service
+      ansible.builtin.command:
+        cmd: make install-daemoninit
+        chdir: /tmp/nagios-build
+        creates: /lib/systemd/system/nagios.service
+
+    # Step 7: Install command mode permissions
+    - name: Step 7 - Install external command mode permissions
+      ansible.builtin.command:
+        cmd: make install-commandmode
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/var/rw
+
+    # Step 8: Install sample configuration files
+    - name: Step 8 - Install sample configuration files
+      ansible.builtin.command:
+        cmd: make install-config
+        chdir: /tmp/nagios-build
+        creates: /usr/local/nagios/etc/nagios.cfg
+
+    # Step 9: Install Apache web config and enable modules
+    - name: Step 9 - Install Apache web configuration
+      ansible.builtin.command:
+        cmd: make install-webconf
+        chdir: /tmp/nagios-build
+        creates: "{{ '/etc/apache2/sites-enabled/nagios.conf' if ansible_facts['os_family'] == 'Debian' else '/etc/httpd/conf.d/nagios.conf' }}"
+      notify: Restart Web Server
+
+    - name: Step 9 - Enable Apache rewrite and cgi modules (Ubuntu/Debian only)
+      community.general.apache2_module:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rewrite
+        - cgi
+      when: ansible_facts['os_family'] == 'Debian'
+      notify: Restart Web Server
+
+    # Step 10: Configure Firewall
+    - name: Step 10 - Allow Apache traffic through UFW (Ubuntu/Debian)
+      community.general.ufw:
+        rule: allow
+        name: Apache
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Step 10 - Reload UFW rules (Ubuntu/Debian)
+      community.general.ufw:
+        state: reloaded
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Step 10 - Allow HTTP and HTTPS services through Firewalld (CentOS/RHEL)
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      loop:
+        - http
+        - https
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    # Step 11: Create web login user (nagiosadmin)
+    - name: Step 11 - Create htpasswd file for nagiosadmin
+      ansible.builtin.shell:
+        cmd: htpasswd -b -c /usr/local/nagios/etc/htpasswd.users '{{ nagios_user }}' '{{ nagiosadmin_password }}'
+        creates: /usr/local/nagios/etc/htpasswd.users
+
+    # Step 12: Ensure Web Server service is started
+    - name: Step 12 - Ensure Web Server service is running
+      ansible.builtin.systemd:
+        name: "{{ web_server_service }}"
+        state: started
+        enabled: yes
+
+    # Step 13: Start Nagios service
+    - name: Step 13 - Enable and start Nagios service
+      ansible.builtin.systemd:
+        name: nagios
+        state: started
+        enabled: yes
+
+    # Step 14: Install Nagios Plugins prerequisites (Ubuntu/Debian)
+    - name: Step 14 - Install Nagios Plugins prerequisite packages (Ubuntu/Debian)
+      ansible.builtin.apt:
+        name:
+          - autoconf
+          - gcc
+          - libc6
+          - libmcrypt-dev
+          - make
+          - libssl-dev
+          - wget
+          - bc
+          - gawk
+          - dc
+          - build-essential
+          - snmp
+          - libnet-snmp-perl
+          - gettext
+          - iputils-ping
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # Step 15: Download and extract Nagios Plugins
+    - name: Step 15 - Create build directory for Nagios Plugins
+      ansible.builtin.file:
+        path: /tmp/nagios-plugins-build
+        state: directory
+        mode: '0755'
+
+    - name: Step 15 - Download and extract Nagios Plugins archive
+      ansible.builtin.unarchive:
+        src: https://github.com/nagios-plugins/nagios-plugins/releases/download/release-2.4.8/nagios-plugins-2.4.8.tar.gz
+        dest: /tmp/nagios-plugins-build
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        creates: /tmp/nagios-plugins-build/configure
+
+    # Step 16: Configure, compile, and install Nagios Plugins
+    - name: Step 16 - Configure Nagios Plugins
+      ansible.builtin.command:
+        cmd: ./configure
+        chdir: /tmp/nagios-plugins-build
+        creates: /tmp/nagios-plugins-build/Makefile
+
+    - name: Step 16 - Compile Nagios Plugins
+      ansible.builtin.command:
+        cmd: make
+        chdir: /tmp/nagios-plugins-build
+        creates: /tmp/nagios-plugins-build/plugins/check_ping
+
+    - name: Step 16 - Install Nagios Plugins
+      ansible.builtin.command:
+        cmd: make install
+        chdir: /tmp/nagios-plugins-build
+        creates: /usr/local/nagios/libexec/check_ping
+      notify:
+         - Restart Nagios
+         - Restart Web Server
