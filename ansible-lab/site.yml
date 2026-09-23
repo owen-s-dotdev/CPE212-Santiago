@@ -13,7 +13,7 @@
   - name: install updates (Ubuntu)
     tags: always
     apt:
-      #upgrade: dist
+      upgrade: dist
       update_cache: yes
     when: ansible_distribution == "Ubuntu"
 
