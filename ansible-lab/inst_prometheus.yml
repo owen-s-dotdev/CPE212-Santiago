@@ -109,3 +109,38 @@
   loop:
     - prometheus
     - promtool
+
+# TASK 6: INSTALL PROMETHEUS CONFIG FILES
+# [Ubuntu/CentOS]: sudo cp /tmp/prometheus-2.52.0.linux-amd64/prometheus.yml /etc/prometheus/
+# [Ubuntu/CentOS]: sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
+- name: Copy default prometheus.yml to /etc/prometheus
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus.yml"
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0644'
+    remote_src: true
+
+# [Ubuntu/CentOS]: sudo cp -r /tmp/prometheus-2.52.0.linux-amd64/consoles /etc/prometheus/
+# [Ubuntu/CentOS]: sudo cp -r /tmp/prometheus-2.52.0.linux-amd64/console_libraries /etc/prometheus/
+- name: Copy consoles and console_libraries directories to /etc/prometheus
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "{{ prometheus_config_dir }}/"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+    remote_src: true
+  loop:
+    - consoles
+    - console_libraries
+
+# [Ubuntu/CentOS]: sudo chown -R prometheus:prometheus /etc/prometheus
+# [Verification]: ls -la /etc/prometheus
+- name: Ensure correct recursive ownership on /etc/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    recurse: true
