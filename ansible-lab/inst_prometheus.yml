@@ -1,0 +1,26 @@
+---
+# PRE-TASKS: UPDATE AND UPGRADE
+- name: Install and Deploy Prometheus
+  hosts: web_servers
+  become: true
+
+  roles:
+    - prometheus
+
+# [CentOS]: sudo dnf check-update && sudo dnf upgrade -y
+- name: Update repository cache and upgrade packages (CentOS / RHEL)
+  tags: always
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+    update_only: true
+  when: ansible_os_family == "RedHat"
+
+# [Ubuntu]: sudo apt update && sudo apt dist-upgrade -y
+- name: Update repository cache and upgrade packages (Ubuntu / Debian)
+  tags: always
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+  when: ansible_os_family == "Debian"
