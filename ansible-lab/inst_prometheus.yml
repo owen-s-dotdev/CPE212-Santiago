@@ -174,3 +174,19 @@
     enabled: true
     state: started
 
+# TASK 10: VERIFY PROMETHEUS
+
+# [Ubuntu/CentOS]: ss -tulpn | grep 9090
+- name: Verify Prometheus Service is listening on port 9090
+  ansible.builtin.wait_for:
+    port: 9090
+    timeout: 10
+
+# [Ubuntu/CentOS]: curl -s http://localhost:9090/-/ready
+- name: Verify Prometheus Readiness Endpoint
+  ansible.builtin.url:
+    url: http://localhost:9090/-/ready
+    status_code: 20
+  register: readiness_check
+
+
