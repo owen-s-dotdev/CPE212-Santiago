@@ -79,3 +79,17 @@
     owner: "{{ prometheus_user }}"
     group: "{{ prometheus_group }}"
     mode: '0755'
+
+# TASK 4: DOWNLOAD PROMETHEUS
+# [Ubuntu/CentOS]: cd /tmp
+# [Ubuntu/CentOS]: wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+# [Ubuntu/CentOS]: tar -xvf prometheus-2.52.0.linux-amd64.tar.gz
+# [Verification]: ls -lh prometheus-2.52.0.linux-amd64.tar.gz && ls -la prometheus-2.52.0.linux-amd64
+- name: Download and extract Prometheus archive
+  ansible.builtin.unarchive:
+    src: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
+
+
