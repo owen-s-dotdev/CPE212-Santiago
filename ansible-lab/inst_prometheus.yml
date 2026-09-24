@@ -144,3 +144,25 @@
     owner: "{{ prometheus_user }}"
     group: "{{ prometheus_group }}"
     recurse: true
+
+# TASK 7: VALIDATE THE CONFIGURATION
+
+# [Ubuntu/CentOS]: /usr/local/bin/promtool check config /etc/prometheus/prometheus.yml
+- name: Validate Prometheus Configuration
+  ansible.builtin.command:
+    cmd: "{{ prometheus_bin_dir }}/promtool check config {{ prometheus_config_dir }}/prometheus.yml"
+
+  changed_when: false
+
+# TASK 8: CREATE SYSTEMD SERVICE
+
+- name: Create /etc/systemd/system/prometheus.service
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart prometheus
