@@ -1,2 +1,13 @@
 ---
 # handlers file for prometheus
+
+# [Ubuntu/CentOS]: sudo systemctl daemon-reload
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+# [Ubuntu/CentOS]: sudo systemctl restart prometheus
+- name: Restart prometheus
+  ansible.builtin.systemd:
+    name: prometheus
+    state: restarted
