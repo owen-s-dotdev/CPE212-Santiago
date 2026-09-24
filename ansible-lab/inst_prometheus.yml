@@ -166,3 +166,11 @@
   notify:
     - Reload systemd
     - Restart prometheus
+
+# TASK 9: START AND ENABLE PROMETHEUS
+- name: Enable and start Prometheus service
+  ansible.builtin.systemd:
+    name: prometheus
+    enabled: true
+    state: started
+
