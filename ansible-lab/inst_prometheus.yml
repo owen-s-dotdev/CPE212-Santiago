@@ -57,3 +57,25 @@
     create_home: false
     system: true
     state: present
+  
+
+# TASK 3: CREATE PROMETHEUS DIRECTORIES
+
+# [Ubuntu/CentOS]: sudo mkdir -p /etc/prometheus
+- name: Create configuration directory /etc/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+
+# [Ubuntu/CentOS]: sudo mkdir -p /var/lib/prometheus
+# [Verification]: ls -ld /etc/prometheus /var/lib/prometheus
+- name: Create data directory /var/lib/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_db_dir }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
