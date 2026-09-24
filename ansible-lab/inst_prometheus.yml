@@ -25,10 +25,35 @@
     update_cache: true
   when: ansible_os_family == "Debian"
 
+# [Ubuntu]: sudo apt install -y wget tar curl
+# [CentOS]: sudo dnf install -y wget tar curl
+
 - name: Install utilities (wget, tar, curl)
   ansible.builtin.package:
     name:
       - wget 
       - tar
       - curl
+    state: present
+
+# TASK 2: CREATE THE PROMETHEUS USER
+
+# [Ubuntu/CentOS]: sudo groupadd --system prometheus
+- name: Create prometheus system group
+  ansible.builtin.group:
+    name: "{{ prometheus_group }}"
+    state: present
+    system: true
+
+
+# [Ubuntu]: sudo useradd --system --no-create-home --shell /bin/false -g prometheus prometheus
+# [CentOS]: sudo useradd --system --no-create-home --shell /sbin/nologin -g prometheus prometheus
+# [Verification]: id prometheus
+- name: Create prometheus system user with disabled login shell
+  ansible.builtin.user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    shell: "{{ '/bin/false' if ansible_os_family == 'Debian' else '/sbin/nologin' }}"
+    create_home: false
+    system: true
     state: present
