@@ -1,0 +1,289 @@
+Directory Structure
+.
+├── site.yml
+└── roles/
+    └── prometheus/
+        ├── defaults/
+        │   └── main.yml
+        ├── handlers/
+        │   └── main.yml
+        ├── tasks/
+        │   └── main.yml
+        └── templates/
+            └── prometheus.service.j2
+
+1. site.yml (Main Playbook)
+---
+- name: Deploy Prometheus Monitoring System
+  hosts: all
+  become: true
+
+  roles:
+    - prometheus
+
+2. roles/prometheus/defaults/main.yml (Default Variables)
+---
+prometheus_version: "2.52.0"
+prometheus_user: "prometheus"
+prometheus_group: "prometheus"
+prometheus_config_dir: "/etc/prometheus"
+prometheus_db_dir: "/var/lib/prometheus"
+prometheus_bin_dir: "/usr/local/bin"
+
+3. roles/prometheus/handlers/main.yml (Handlers)
+---
+# [Ubuntu/CentOS]: sudo systemctl daemon-reload
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+# [Ubuntu/CentOS]: sudo systemctl restart prometheus
+- name: Restart prometheus
+  ansible.builtin.systemd:
+    name: prometheus
+    state: restarted
+
+4. roles/prometheus/templates/prometheus.service.j2 (Jinja2 Template)
+[Unit]
+Description=Prometheus Monitoring System
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ prometheus_user }}
+Group={{ prometheus_group }}
+Type=simple
+Restart=on-failure
+RestartSec=5s
+ExecStart={{ prometheus_bin_dir }}/prometheus \
+    --config.file={{ prometheus_config_dir }}/prometheus.yml \
+    --storage.tsdb.path={{ prometheus_db_dir }} \
+    --web.console.templates={{ prometheus_config_dir }}/consoles \
+    --web.console.libraries={{ prometheus_config_dir }}/console_libraries \
+    --web.listen-address=0.0.0.0:9090 \
+    --web.enable-lifecycle \
+    --log.level=info
+
+[Install]
+WantedBy=multi-user.target
+
+5. roles/prometheus/tasks/main.yml (Role Tasks)
+---
+# =========================================================================
+# PRE-TASKS: UPDATE & UPGRADE PACKAGES
+# =========================================================================
+
+# [CentOS]: sudo dnf check-update && sudo dnf upgrade -y
+- name: Update repository cache and upgrade packages (CentOS / RHEL)
+  tags: always
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+    update_only: true
+  when: ansible_os_family == "RedHat"
+
+# [Ubuntu]: sudo apt update && sudo apt dist-upgrade -y
+- name: Update repository cache and upgrade packages (Ubuntu / Debian)
+  tags: always
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+  when: ansible_os_family == "Debian"
+
+# =========================================================================
+# TASK 1: PREPARE THE SERVER
+# =========================================================================
+
+# [Ubuntu]: sudo apt install -y wget tar curl
+# [CentOS]: sudo dnf install -y wget tar curl
+- name: Install required utilities (wget, tar, curl)
+  ansible.builtin.package:
+    name:
+      - wget
+      - tar
+      - curl
+    state: present
+
+# =========================================================================
+# TASK 2: CREATE THE PROMETHEUS USER
+# =========================================================================
+
+# [Ubuntu/CentOS]: sudo groupadd --system prometheus
+- name: Create prometheus system group
+  ansible.builtin.group:
+    name: "{{ prometheus_group }}"
+    state: present
+    system: true
+
+# [Ubuntu]: sudo useradd --system --no-create-home --shell /bin/false -g prometheus prometheus
+# [CentOS]: sudo useradd --system --no-create-home --shell /sbin/nologin -g prometheus prometheus
+# [Verification]: id prometheus
+- name: Create prometheus system user with disabled login shell
+  ansible.builtin.user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    shell: "{{ '/bin/false' if ansible_os_family == 'Debian' else '/sbin/nologin' }}"
+    create_home: false
+    system: true
+    state: present
+
+# =========================================================================
+# PART 3: CREATE PROMETHEUS DIRECTORIES
+# =========================================================================
+
+# [Ubuntu/CentOS]: sudo mkdir -p /etc/prometheus
+- name: Create configuration directory /etc/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+
+# [Ubuntu/CentOS]: sudo mkdir -p /var/lib/prometheus
+# [Verification]: ls -ld /etc/prometheus /var/lib/prometheus
+- name: Create data directory /var/lib/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_db_dir }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+
+# =========================================================================
+# PART 4: DOWNLOAD PROMETHEUS
+# =========================================================================
+
+# [Ubuntu/CentOS]: cd /tmp
+# [Ubuntu/CentOS]: wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+# [Ubuntu/CentOS]: tar -xvf prometheus-2.52.0.linux-amd64.tar.gz
+# [Verification]: ls -lh prometheus-2.52.0.linux-amd64.tar.gz && ls -la prometheus-2.52.0.linux-amd64
+- name: Download and extract Prometheus archive
+  ansible.builtin.unarchive:
+    src: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    dest: /tmp
+    remote_src: true
+    creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
+
+# =========================================================================
+# TASK 5: INSTALL THE PROMETHEUS BINARIES
+# =========================================================================
+
+# [Ubuntu/CentOS]: sudo cp /tmp/prometheus-2.52.0.linux-amd64/prometheus /usr/local/bin/
+# [Ubuntu/CentOS]: sudo cp /tmp/prometheus-2.52.0.linux-amd64/promtool /usr/local/bin/
+# [Ubuntu/CentOS]: sudo chown prometheus:prometheus /usr/local/bin/prometheus /usr/local/bin/promtool
+# [Ubuntu/CentOS]: sudo chmod 0755 /usr/local/bin/prometheus /usr/local/bin/promtool
+# [Verification]: /usr/local/bin/prometheus --version && /usr/local/bin/promtool --version
+- name: Copy Prometheus binaries to /usr/local/bin
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "{{ prometheus_bin_dir }}/{{ item }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+    remote_src: true
+  loop:
+    - prometheus
+    - promtool
+
+# =========================================================================
+# TASK 6: INSTALL THE PROMETHEUS CONFIGURATION FILES
+# =========================================================================
+
+# [Ubuntu/CentOS]: sudo cp /tmp/prometheus-2.52.0.linux-amd64/prometheus.yml /etc/prometheus/
+# [Ubuntu/CentOS]: sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
+- name: Copy default prometheus.yml to /etc/prometheus
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus.yml"
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0644'
+    remote_src: true
+
+# [Ubuntu/CentOS]: sudo cp -r /tmp/prometheus-2.52.0.linux-amd64/consoles /etc/prometheus/
+# [Ubuntu/CentOS]: sudo cp -r /tmp/prometheus-2.52.0.linux-amd64/console_libraries /etc/prometheus/
+- name: Copy consoles and console_libraries directories to /etc/prometheus
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+    dest: "{{ prometheus_config_dir }}/"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+    remote_src: true
+  loop:
+    - consoles
+    - console_libraries
+
+# [Ubuntu/CentOS]: sudo chown -R prometheus:prometheus /etc/prometheus
+# [Verification]: ls -la /etc/prometheus
+- name: Ensure correct recursive ownership on /etc/prometheus
+  ansible.builtin.file:
+    path: "{{ prometheus_config_dir }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    recurse: true
+
+# =========================================================================
+# TASK 7: VALIDATE THE CONFIGURATION
+# =========================================================================
+
+# [Ubuntu/CentOS]: /usr/local/bin/promtool check config /etc/prometheus/prometheus.yml
+- name: Validate Prometheus configuration file syntax
+  ansible.builtin.command:
+    cmd: "{{ prometheus_bin_dir }}/promtool check config {{ prometheus_config_dir }}/prometheus.yml"
+  changed_when: false
+
+# =========================================================================
+# TASK 8: CREATE THE SYSTEMD SERVICE
+# =========================================================================
+
+# [Ubuntu/CentOS]: Deploy service file from Jinja2 template
+- name: Create /etc/systemd/system/prometheus.service
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart prometheus
+
+# =========================================================================
+# TASK 9: START AND ENABLE PROMETHEUS
+# =========================================================================
+
+# [Ubuntu/CentOS]: sudo systemctl daemon-reload
+# [Ubuntu/CentOS]: sudo systemctl enable prometheus
+# [Ubuntu/CentOS]: sudo systemctl start prometheus
+# [Verification]: sudo systemctl status prometheus
+- name: Enable and start Prometheus service
+  ansible.builtin.systemd:
+    name: prometheus
+    enabled: true
+    state: started
+
+# =========================================================================
+# TASK 10: VERIFY PROMETHEUS
+# =========================================================================
+
+# [Ubuntu/CentOS]: ss -tulpn | grep 9090
+- name: Verify Prometheus service is listening on port 9090
+  ansible.builtin.wait_for:
+    port: 9090
+    timeout: 10
+
+# [Ubuntu/CentOS]: curl -s http://localhost:9090/-/ready
+- name: Verify Prometheus readiness endpoint
+  ansible.builtin.uri:
+    url: http://localhost:9090/-/ready
+    status_code: 200
+  register: readiness_check
+
+# [Verification Output]
+- name: Display verification success message
+  ansible.builtin.debug:
+    msg: "Prometheus installation complete. Access URL: http://{{ ansible_default_ipv4.address }}:9090"
+
