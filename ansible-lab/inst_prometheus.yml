@@ -24,3 +24,11 @@
     upgrade: dist
     update_cache: true
   when: ansible_os_family == "Debian"
+
+- name: Install utilities (wget, tar, curl)
+  ansible.builtin.package:
+    name:
+      - wget 
+      - tar
+      - curl
+    state: present
