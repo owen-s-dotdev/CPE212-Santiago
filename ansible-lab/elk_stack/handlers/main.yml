@@ -1,3 +1,14 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # handlers file for elk_stack
+- name: Restart Elasticsearch
+  ansible.builtin.systemd:
+    name: elasticsearch
+    state: restarted
+    daemon_reload: yes
+
+- name: Restart Kibana
+  ansible.builtin.systemd:
+    name: kibana
+    state: restarted
+    daemon_reload: yes
