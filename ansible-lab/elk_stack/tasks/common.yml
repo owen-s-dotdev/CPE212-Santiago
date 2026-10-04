@@ -1,0 +1,104 @@
+---
+- name: Configure JVM Heap Memory
+  ansible.builtin.copy:
+    dest: /etc/elasticsearch/jvm.options.d/heap.options
+    content: |
+      -Xms{{ elasticsearch_heap_size }}
+      -Xmx{{ elasticsearch_heap_size }}
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+  notify: Restart Elasticsearch
+
+- name: Start and enable Elasticsearch
+  ansible.builtin.systemd:
+    name: elasticsearch
+    state: started
+    enabled: yes
+
+- name: Start and enable Logstash
+  ansible.builtin.systemd:
+    name: logstash
+    state: started
+    enabled: yes
+
+- name: Set permissions for Elasticsearch root and certs directory
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/elasticsearch
+    - /etc/elasticsearch/certs
+
+- name: Set permissions and ownership for Elasticsearch CA certificate
+  ansible.builtin.file:
+    path: /etc/elasticsearch/certs/http_ca.crt
+    owner: elasticsearch
+    group: kibana
+    mode: '0640'
+
+- name: Copy Elasticsearch CA certificate to Kibana directory
+  ansible.builtin.copy:
+    src: /etc/elasticsearch/certs/http_ca.crt
+    dest: /etc/kibana/http_ca.crt
+    owner: kibana
+    group: kibana
+    mode: '0640'
+    remote_src: yes
+  notify: Restart Kibana
+
+- name: Generate Kibana SSL Certificate
+  ansible.builtin.command:
+    cmd: /usr/share/elasticsearch/bin/elasticsearch-certutil cert --pem -out /tmp/kibana-cert.zip
+    creates: /tmp/kibana-cert.zip
+
+- name: Ensure Kibana certs directory exists
+  ansible.builtin.file:
+    path: /etc/kibana/certs
+    state: directory
+    owner: kibana
+    group: kibana
+    mode: '0750'
+
+- name: Extract Kibana SSL Certificates
+  ansible.builtin.unarchive:
+    src: /tmp/kibana-cert.zip
+    dest: /etc/kibana/certs/
+    remote_src: yes
+    creates: /etc/kibana/certs/instance/instance.crt
+
+- name: Rename Kibana crt file
+  ansible.builtin.command: mv /etc/kibana/certs/instance/instance.crt /etc/kibana/certs/kibana.crt
+  args:
+    creates: /etc/kibana/certs/kibana.crt
+
+- name: Rename Kibana key file
+  ansible.builtin.command: mv /etc/kibana/certs/instance/instance.key /etc/kibana/certs/kibana.key
+  args:
+    creates: /etc/kibana/certs/kibana.key
+
+- name: Set Kibana certs directory permissions
+  ansible.builtin.file:
+    path: /etc/kibana/certs
+    state: directory
+    owner: kibana
+    group: kibana
+    recurse: yes
+    mode: '0750'
+
+- name: Update kibana.yml for SSL configuration
+  ansible.builtin.blockinfile:
+    path: /etc/kibana/kibana.yml
+    block: |
+      server.ssl.enabled: true
+      server.ssl.certificate: /etc/kibana/certs/kibana.crt
+      server.ssl.key: /etc/kibana/certs/kibana.key
+      elasticsearch.ssl.verificationMode: certificate
+  notify: Restart Kibana
+
+- name: Start and enable Kibana
+  ansible.builtin.systemd:
+    name: kibana
+    state: started
+    enabled: yes

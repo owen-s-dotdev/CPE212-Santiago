@@ -1,0 +1,4 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for elk_stack
+elasticsearch_heap_size: "512m"
