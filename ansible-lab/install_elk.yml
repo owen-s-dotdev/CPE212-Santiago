@@ -1,0 +1,6 @@
+---
+- name: Deploy ELK Stack on Ubuntu and CentOS
+  hosts: all
+  become: true
+  roles:
+    - elk_stack

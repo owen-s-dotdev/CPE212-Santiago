@@ -1,0 +1,32 @@
+# Configuration tasks for Ubuntu 
+---
+- name: Install Java Dependencies and required utilities (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - default-jre
+      - default-jdk
+      - apt-transport-https
+      - unzip
+    state: present
+    update_cache: yes
+
+- name: Add Elasticsearch GPG key (Ubuntu)
+  ansible.builtin.shell: |
+    wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/elasticsearch-keyring.gpg
+
+- name: Add Elastic APT repository (Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/9.x/apt stable main"
+    state: present
+    filename: elastic-9.x
+
+- name: Install Elasticsearch, Logstash, and Kibana (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - elasticsearch
+      - logstash
+      - kibana
+    state: present
+    update_cache: yes

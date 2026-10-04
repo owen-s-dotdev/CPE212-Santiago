@@ -1,0 +1,29 @@
+---
+- name: Install Java Dependencies and required utilities (CentOS)
+  ansible.builtin.dnf:
+    name:
+      - java-17-openjdk-devel
+      - unzip
+    state: present
+
+- name: Import Elasticsearch GPG key (CentOS)
+  ansible.builtin.rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+
+- name: Add Elastic YUM repository (CentOS)
+  ansible.builtin.yum_repository:
+    name: elastic-9.x
+    description: Elastic repository for 9.x packages
+    baseurl: https://artifacts.elastic.co/packages/9.x/yum
+    gpgcheck: yes
+    gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    enabled: yes
+
+- name: Install Elasticsearch, Logstash, and Kibana (CentOS)
+  ansible.builtin.dnf:
+    name:
+      - elasticsearch
+      - logstash
+      - kibana
+    state: present
