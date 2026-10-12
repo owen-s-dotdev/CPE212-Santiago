@@ -1,3 +1,8 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # defaults file for elastic_search
+es_cluster_name: elk-lab
+es_node_name: "{{ inventory_hostname }}"
+es_heap_size: 1g          # Xms and Xmx must match; keep small for lab VMs
+es_http_host: 0.0.0.0     # lets Kibana and Logstash reach the HTTP API
+es_http_port: 9200
