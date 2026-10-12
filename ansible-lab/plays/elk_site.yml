@@ -1,0 +1,5 @@
+---
+# Documentation install order: Elasticsearch -> Kibana -> Logstash
+- ansible.builtin.import_playbook: elk_elasticsearch.yml
+- ansible.builtin.import_playbook: elk_kibana.yml
+- ansible.builtin.import_playbook: elk_logstash.yml
