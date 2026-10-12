@@ -1,0 +1,9 @@
+---
+- name: Install and configure Elasticsearch (Ubuntu and CentOS)
+  hosts: db_servers
+  become: true
+  roles:
+    - role: elk_stack
+      vars:
+        elk_component: kibana
+
