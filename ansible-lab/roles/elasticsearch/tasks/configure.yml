@@ -1,0 +1,24 @@
+---
+# applies the settings from the “important settings” page: 
+# cluster name, node name, network, and heap.
+
+- name: Set core settings in elasticsearch.yml
+  ansible.builtin.lineinfile:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: "^#?{{ item.key }}:"
+    line: "{{ item.key }}: {{ item.value }}"
+  loop:
+    - { key: "cluster.name", value: "{{ es_cluster_name }}" }
+    - { key: "node.name",    value: "{{ es_node_name }}" }
+    - { key: "http.host",    value: "{{ es_http_host }}" }
+    - { key: "http.port",    value: "{{ es_http_port }}" }
+  notify: Restart elasticsearch
+
+- name: Set JVM heap size
+  ansible.builtin.template:
+    src: heap.options.j2
+    dest: /etc/elasticsearch/jvm.options.d/heap.options
+    owner: root
+    group: elasticsearch
+    mode: "0660"
+  notify: Restart elasticsearch
