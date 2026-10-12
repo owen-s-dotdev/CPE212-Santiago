@@ -6,3 +6,4 @@ es_node_name: "{{ ansible_hostname }}"
 es_heap_size: 1g          # Xms and Xmx must match; keep small for lab VMs
 es_http_host: 0.0.0.0     # lets Kibana and Logstash reach the HTTP API
 es_http_port: 9200
+es_http_publish_host: "{{ ansible_host }}"

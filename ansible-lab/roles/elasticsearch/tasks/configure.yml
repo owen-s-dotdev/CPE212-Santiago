@@ -12,6 +12,7 @@
     - { key: "node.name",    value: "{{ es_node_name }}" }
     - { key: "http.host",    value: "{{ es_http_host }}" }
     - { key: "http.port",    value: "{{ es_http_port }}" }
+    - { key: "http.publish_host", value: "{{ es_http_publish_host }}" }
   notify: Restart elasticsearch
 
 - name: Set JVM heap size
