@@ -10,3 +10,5 @@
 - name: Start Elasticsearch and set the elastic password
   ansible.builtin.include_tasks: security.yml
 
+- name: Open the firewall for the HTTP port
+  ansible.builtin.include_tasks: firewall.yml
