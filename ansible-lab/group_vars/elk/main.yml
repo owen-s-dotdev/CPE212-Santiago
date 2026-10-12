@@ -1,0 +1,13 @@
+---
+elastic_series: "9.x"
+elastic_gpg_key_url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+elastic_keyring_path: /usr/share/keyrings/elasticsearch-keyring.gpg
+
+# Repositories (APT and YUM)
+elastic_apt_repo: "deb [signed-by={{ elastic_keyring_path }}] https://artifacts.elastic.co/packages/{{ elastic_series }}/apt stable main"
+elastic_yum_baseurl: "https://artifacts.elastic.co/packages/{{ elastic_series }}/yum"
+
+# First Elasticsearch host; Kibana and Logstash connect to it
+es_primary_host: "{{ groups['web_servers'][0] }}"
+es_primary_addr: "{{ hostvars[es_primary_host].ansible_host }}"
+es_elastic_password: "{{ vault_elastic_password }}"
