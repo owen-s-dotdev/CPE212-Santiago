@@ -1,5 +1,5 @@
 ---
-- name: Install and configure Elasticsearch (Ubuntu and CentOS)
+- name: Install and configure Kibana (Ubuntu and CentOS)
   hosts: db_servers
   become: true
   roles:
