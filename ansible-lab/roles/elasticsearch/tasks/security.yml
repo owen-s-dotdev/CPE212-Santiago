@@ -16,21 +16,38 @@
     port: "{{ es_http_port }}"
     timeout: 180
 
-- name: Set the elastic user password (first run only)
+- name: Generate a temporary elastic password (first run only)
   ansible.builtin.command: >
-    /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -i -b
+    /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -a -b -s
   args:
-    stdin: "{{ es_elastic_password }}\n{{ es_elastic_password }}\n"
     creates: /etc/elasticsearch/.elastic_password_set
-  no_log: true
-  register: pw_result
+  register: es_temp_pw
+  retries: 6
+  delay: 10
+  until: es_temp_pw.rc == 0
+  no_log: "{{ es_no_log | default(true) }}"
+
+- name: Set the elastic password to the vaulted value
+  ansible.builtin.uri:
+    url: "https://localhost:{{ es_http_port }}/_security/user/elastic/_password"
+    method: POST
+    user: elastic
+    password: "{{ es_temp_pw.stdout_lines | last | trim }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ es_elastic_password }}"
+    validate_certs: false
+    status_code: 200
+  when: es_temp_pw is changed
+  no_log: "{{ es_no_log | default(true) }}"
 
 - name: Mark the password as set
   ansible.builtin.file:
     path: /etc/elasticsearch/.elastic_password_set
     state: touch
     mode: "0600"
-  when: pw_result is changed
+  when: es_temp_pw is changed
 
 - name: Verify Elasticsearch responds
   ansible.builtin.uri:
