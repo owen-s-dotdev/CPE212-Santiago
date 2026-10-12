@@ -22,3 +22,6 @@
     group: elasticsearch
     mode: "0660"
   notify: Restart elasticsearch
+
+- name: Apply config changes before continuing
+  ansible.builtin.meta: flush_handlers
