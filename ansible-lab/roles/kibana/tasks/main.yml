@@ -1,3 +1,23 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for kibana
+- name: Include OS-specific install tasks
+  ansible.builtin.include_tasks: "install_{{ ansible_os_family | lower }}.yml"
+
+- name: Configure Kibana
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Enroll Kibana with Elasticsearch
+  ansible.builtin.include_tasks: enroll.yml
+
+- name: Enable and start Kibana
+  ansible.builtin.systemd:
+    name: kibana
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Wait for Kibana to listen
+  ansible.builtin.wait_for:
+    port: "{{ kibana_server_port }}"
+    timeout: 180

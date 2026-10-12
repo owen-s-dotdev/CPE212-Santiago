@@ -1,3 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # defaults file for kibana
+kibana_server_host: 0.0.0.0
+kibana_server_port: 5601
+kibana_server_name: "{{ inventory_hostname }}"
+kibana_public_url: "http://{{ ansible_host }}:{{ kibana_server_port }}"
