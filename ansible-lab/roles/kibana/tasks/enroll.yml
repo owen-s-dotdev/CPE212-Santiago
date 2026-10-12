@@ -10,13 +10,13 @@
     /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
   delegate_to: "{{ es_primary_host }}"
   register: kibana_token
-  no_log: true
+  no_log: "{{ kibana_no_log | default(true) }}"
   when: kibana_enrolled.rc == 1
 
 - name: Enroll Kibana using the token
   ansible.builtin.command: >
     /usr/share/kibana/bin/kibana-setup --enrollment-token {{ kibana_token.stdout }}
-  no_log: true
+  no_log: "{{ kibana_no_log | default(true) }}"
   when: kibana_enrolled.rc == 1
   notify: Restart kibana
 
