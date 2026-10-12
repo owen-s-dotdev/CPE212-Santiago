@@ -1,0 +1,21 @@
+---
+- name: Import the Elastic GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ elastic_gpg_key_url }}"
+    state: present
+
+- name: Define the Elasticsearch yum repository
+  ansible.builtin.yum_repository:
+    name: elasticsearch
+    file: elasticsearch
+    description: "Elasticsearch repository for {{ elastic_series }} packages"
+    baseurl: "{{ elastic_yum_baseurl }}"
+    gpgcheck: true
+    gpgkey: "{{ elastic_gpg_key_url }}"
+    enabled: false          # the RPM docs ship this repo disabled
+
+- name: Install Elasticsearch from the repo
+  ansible.builtin.yum:
+    name: elasticsearch
+    state: present
+    enablerepo: elasticsearch

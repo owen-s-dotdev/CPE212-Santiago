@@ -1,0 +1,60 @@
+---
+# On first start, 9.x auto-configures security and generates a random elastic password.
+# The reset task sets a known password so Kibana and Logstash can use it. 
+# The marker file (creates) keeps the task idempotent.
+# The final check is the documented “curl to port 9200” test.
+
+- name: Reload systemd, enable and start Elasticsearch
+  ansible.builtin.systemd:
+    name: elasticsearch
+    daemon_reload: true
+    enabled: true
+    state: started
+
+- name: Wait for the HTTP port
+  ansible.builtin.wait_for:
+    port: "{{ es_http_port }}"
+    timeout: 180
+
+- name: Generate a temporary elastic password (first run only)
+  ansible.builtin.command: >
+    /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -a -b -s
+  args:
+    creates: /etc/elasticsearch/.elastic_password_set
+  register: es_temp_pw
+  retries: 6
+  delay: 10
+  until: es_temp_pw.rc == 0
+  no_log: "{{ es_no_log | default(true) }}"
+
+- name: Set the elastic password to the vaulted value
+  ansible.builtin.uri:
+    url: "https://localhost:{{ es_http_port }}/_security/user/elastic/_password"
+    method: POST
+    user: elastic
+    password: "{{ es_temp_pw.stdout_lines | last | trim }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      password: "{{ es_elastic_password }}"
+    validate_certs: false
+    status_code: 200
+  when: es_temp_pw is changed
+  no_log: "{{ es_no_log | default(true) }}"
+
+- name: Mark the password as set
+  ansible.builtin.file:
+    path: /etc/elasticsearch/.elastic_password_set
+    state: touch
+    mode: "0600"
+  when: es_temp_pw is changed
+
+- name: Verify Elasticsearch responds
+  ansible.builtin.uri:
+    url: "https://localhost:{{ es_http_port }}"
+    user: elastic
+    password: "{{ es_elastic_password }}"
+    force_basic_auth: true
+    validate_certs: false      # self-signed auto-generated CA (lab only)
+    status_code: 200
+

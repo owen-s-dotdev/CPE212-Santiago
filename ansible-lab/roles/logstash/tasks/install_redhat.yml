@@ -1,0 +1,20 @@
+---
+- name: Import the Elastic GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ elastic_gpg_key_url }}"
+    state: present
+
+- name: Define the Logstash yum repository
+  ansible.builtin.yum_repository:
+    name: "logstash-{{ elastic_series }}"
+    file: logstash
+    description: "Elastic repository for {{ elastic_series }} packages"
+    baseurl: "{{ elastic_yum_baseurl }}"
+    gpgcheck: true
+    gpgkey: "{{ elastic_gpg_key_url }}"
+    enabled: true
+
+- name: Install Logstash
+  ansible.builtin.yum:
+    name: logstash
+    state: present

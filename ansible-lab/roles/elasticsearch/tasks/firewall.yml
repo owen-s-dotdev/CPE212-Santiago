@@ -1,0 +1,18 @@
+---
+# Let Kibana and Logstash on other hosts reach the HTTP API.
+# Only needed when a host firewall is active.
+
+- name: Open the Elasticsearch HTTP port (ufw)
+  community.general.ufw:
+    rule: allow
+    port: "{{ es_http_port }}"
+    proto: tcp
+  when: ansible_os_family == "Debian"
+
+- name: Open the Elasticsearch HTTP port (firewalld)
+  ansible.posix.firewalld:
+    port: "{{ es_http_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+  when: ansible_os_family == "RedHat"

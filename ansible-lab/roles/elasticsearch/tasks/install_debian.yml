@@ -1,0 +1,32 @@
+---
+- name: Install prerequisites
+  ansible.builtin.apt:
+    name: [apt-transport-https, gnupg, wget]
+    state: present
+    update_cache: true
+# The key is fetched and dearmored into /usr/share/keyrings.
+- name: Download the Elastic GPG key
+  ansible.builtin.get_url:
+    url: "{{ elastic_gpg_key_url }}"
+    dest: /tmp/GPG-KEY-elasticsearch
+    mode: "0644"
+
+- name: Convert the key to a keyring (gpg --dearmor)
+  ansible.builtin.command: >
+    gpg --dearmor -o {{ elastic_keyring_path }} /tmp/GPG-KEY-elasticsearch
+  args:
+    creates: "{{ elastic_keyring_path }}"
+
+# The repo is written to /etc/apt/sources.list.d/elastic-9.x.list.
+- name: Add the Elastic APT repository
+  ansible.builtin.apt_repository:
+    repo: "{{ elastic_apt_repo }}"
+    filename: elastic-{{ elastic_series }}
+    state: present
+
+- name: Install the Elasticsearch package
+  ansible.builtin.apt:
+    name: elasticsearch
+    state: present
+    update_cache: true
+

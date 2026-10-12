@@ -1,0 +1,32 @@
+---
+- name: Read the Elasticsearch CA certificate from the ES host
+  ansible.builtin.slurp:
+    src: /etc/elasticsearch/certs/http_ca.crt
+  delegate_to: "{{ es_primary_host }}"
+  register: es_ca
+
+- name: Create the certs directory
+  ansible.builtin.file:
+    path: /etc/logstash/certs
+    state: directory
+    owner: root
+    group: logstash
+    mode: "0750"
+
+- name: Install the CA certificate for Logstash
+  ansible.builtin.copy:
+    content: "{{ es_ca.content | b64decode }}"
+    dest: "{{ logstash_ca_path }}"
+    owner: root
+    group: logstash
+    mode: "0640"
+  notify: Restart logstash
+
+- name: Deploy the Beats-to-Elasticsearch pipeline
+  ansible.builtin.template:
+    src: beats-to-es.conf.j2
+    dest: /etc/logstash/conf.d/beats-to-es.conf
+    owner: root
+    group: logstash
+    mode: "0640"          # the file contains a password
+  notify: Restart logstash

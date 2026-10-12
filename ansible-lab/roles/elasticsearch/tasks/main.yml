@@ -1,0 +1,14 @@
+#SPDX-License-Identifier: MIT-0
+---
+# OS resolves to either "Debian" or "RedHat"
+- name: Include OS-specific install tasks
+  ansible.builtin.include_tasks: "install_{{ ansible_os_family | lower }}.yml"
+
+- name: Configure Elasticsearch
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Start Elasticsearch and set the elastic password
+  ansible.builtin.include_tasks: security.yml
+
+- name: Open the firewall for the HTTP port
+  ansible.builtin.include_tasks: firewall.yml

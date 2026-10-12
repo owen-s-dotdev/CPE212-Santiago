@@ -1,0 +1,12 @@
+---
+- name: Set Kibana server settings
+  ansible.builtin.lineinfile:
+    path: /etc/kibana/kibana.yml
+    regexp: "^#?{{ item.key }}:"
+    line: "{{ item.key }}: {{ item.value }}"
+  loop:
+    - { key: "server.port",          value: "{{ kibana_server_port }}" }
+    - { key: "server.host",          value: '"{{ kibana_server_host }}"' }
+    - { key: "server.name",          value: '"{{ kibana_server_name }}"' }
+    - { key: "server.publicBaseUrl", value: '"{{ kibana_public_url }}"' }
+  notify: Restart kibana
