@@ -1,1 +1,6 @@
 ---
+- name: Install and configure Elasticsearch
+  hosts: web_servers
+  become: true
+  roles:
+    - elasticsearch
