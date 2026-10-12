@@ -1,4 +1,36 @@
-#SPDX-License-Identifier: MIT-0
 ---
-# defaults file for elk_stack
-elasticsearch_heap_size: "512m"
+elk_component: ""  # elasticsearch | kibana | logstash (set by each play)
+
+# Repository
+elk_repo_series: "9.x"
+elk_gpg_key_url: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+
+# Elasticsearch cluster
+elk_cluster_name: elk-cluster
+elk_es_http_port: 9200
+elk_es_heap_size: 512m                # about half of RAM in production (max 31g)
+elk_es_nodes: "{{ groups['web_servers'] }}"
+elk_es_first_node: "{{ groups['web_servers'][0] }}"
+elk_es_node_ips: "{{ elk_es_nodes | map('extract', hostvars, 'ansible_host') | list }}"
+
+# Certificate SANs and password
+elk_cert_dns: "{{ elk_es_nodes + ['localhost'] }}"
+elk_cert_ips: "{{ ['127.0.0.1'] + elk_es_node_ips }}"
+elk_cert_password: "ChangeMe-cert-pass"
+
+# Built-in user passwords (move these into ansible-vault before real use)
+elk_elastic_password: "ChangeMe-elastic"
+elk_kibana_system_password: "ChangeMe-kibana"
+
+# Kibana
+elk_kibana_host: 0.0.0.0
+elk_kibana_port: 5601
+
+# Logstash
+elk_logstash_beats_port: 5044
+elk_logstash_es_user: elastic
+elk_logstash_es_password: "{{ elk_elastic_password }}"
+elk_logstash_index: "logstash-%{+YYYY.MM.dd}"
+
+# Where certs are staged on the control machine (your existing files/ folder)
+elk_certs_local_dir: "{{ playbook_dir }}/../files/elk_certs"
