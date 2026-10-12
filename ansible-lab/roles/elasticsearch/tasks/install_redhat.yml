@@ -13,8 +13,6 @@
     gpgcheck: true
     gpgkey: "{{ elastic_gpg_key_url }}"
     enabled: false          # the RPM docs ship this repo disabled
-    autorefresh: true
-    type: rpm-md
 
 - name: Install Elasticsearch from the repo
   ansible.builtin.yum:

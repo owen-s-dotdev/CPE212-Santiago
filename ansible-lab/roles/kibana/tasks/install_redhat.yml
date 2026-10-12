@@ -13,8 +13,6 @@
     gpgcheck: true
     gpgkey: "{{ elastic_gpg_key_url }}"
     enabled: true
-    autorefresh: true
-    type: rpm-md
 
 - name: Install Kibana
   ansible.builtin.yum:
