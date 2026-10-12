@@ -1,0 +1,9 @@
+---
+- name: Install and configure Logstash (Ubuntu and CentOS)
+  hosts: workstations
+  become: true
+  roles:
+    - role: elk_stack
+      vars:
+        elk_component: logstash
+
