@@ -1,6 +1,6 @@
 ---
 # /home/install_docker.yml
-- hosts: all
+- hosts: web_servers:db_servers
   become: true
 
   pre_tasks:

@@ -33,7 +33,7 @@
     mode: '0644'
     
     
-- name: Add Docker Repository to APT Sources:
+- name: Add Docker Repository to APT Sources
   ansible.builtin.deb822_repository:
     name: docker
     types: deb
@@ -48,9 +48,9 @@
     state: present
     enabled: true
 
-- name: Install the Docker Packages:
+- name: Install the Docker Packages
   ansible.builtin.apt:
-    name::
+    name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
