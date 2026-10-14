@@ -4,8 +4,8 @@
 - name: Install Prerequisites
   ansible.builtin.dnf:
     name: 
-    - ca-certificates
-    - curl
+      - ca-certificates
+      - curl
     state: present
     update_cache: true
 
@@ -34,7 +34,7 @@
     mode: '0644'
     
     
-- name: Add Docker Repository to APT Sources:
+- name: Add Docker Repository to APT Sources
   ansible.builtin.deb822_repository:
     name: docker
     types: deb
@@ -49,9 +49,9 @@
     state: present
     enabled: true
 
-- name: Install the Docker Packages:
+- name: Install the Docker Packages
   ansible.builtin.dnf:
-    name::
+    name:
       - docker-ce
       - docker-ce-cli
       - containerd.io
