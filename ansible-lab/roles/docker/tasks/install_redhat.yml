@@ -43,3 +43,13 @@
   loop:
     - docker.service
     - docker.socket
+
+- name: Install pip
+  ansible.builtin.dnf:
+    name: python3-pip
+    state: present
+
+- name: Install the Docker SDK for Python
+  ansible.builtin.pip:
+    name: docker
+    state: present
