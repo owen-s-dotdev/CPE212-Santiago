@@ -1,0 +1,31 @@
+---
+- name: Install Prerequisites
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, ]
+- name: Remove old versions of Docker
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - docker.io
+    - docker-compose
+    - docker-compose-v2
+    - docker-doc
+    - docker-buildx
+    - podman-docker
+  when: ansible_os_family == 'Debian'
+  update_cache: yes
+  
+- name: Import the Docker GPG key
+  ansible.builtin.apt_key:
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    
+    
+- name: Add Docker Repository to APT Sources:
+  ansible.builtin.apt_repository:
+    repo
+
+- name: Install the Docker Packages:
+  ansible.builtin.apt:
+    name: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
+    state: present
