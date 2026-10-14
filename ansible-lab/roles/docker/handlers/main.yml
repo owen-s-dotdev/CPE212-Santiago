@@ -1,3 +1,10 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # handlers file for docker
+
+# docker/handlers/main.yml
+
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: Docker
+    state: restarted

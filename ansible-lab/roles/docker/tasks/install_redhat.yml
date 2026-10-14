@@ -1,55 +1,30 @@
 ---
 # docker/tasks/install_redhat.yml
-
-- name: Install Prerequisites
+- name: Remove old/conflicting Docker packages
   ansible.builtin.dnf:
-    name: 
-      - ca-certificates
-      - curl
-    state: present
-    update_cache: true
-
-- name: Remove old versions of Docker
-  ansible.builtin.dnf:
-    name: 
-      - docker.io
-      - docker-compose
-      - docker-compose-v2
-      - docker-doc
-      - docker-buildx
-      - podman-docker
+    name:
+      - docker
+      - docker-client
+      - docker-client-latest
+      - docker-common
+      - docker-latest
+      - docker-latest-logrotate
+      - docker-logrotate
+      - docker-engine
     state: absent
-  
 
-- name: Create the apt keyrings directory
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
-  
 - name: Import the Docker GPG key
-  ansible.builtin.get_url:
-    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
-    dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
-    
-    
-- name: Add Docker Repository to APT Sources
-  ansible.builtin.deb822_repository:
-    name: docker
-    types: deb
-    uris: "https://download.docker.com/linux/{{ ansible_distribution | lower }}"
-    suites: "{{ ansible_distribution_release }}"
-    components: stable
-    architectures: >-
-      {{ 'amd64' if ansible_architecture == 'x86_64' 
-      else 'arm64' if ansible_architecture == 'aarch64' 
-      else ansible_architecture }}
-    signed_by: /etc/apt/keyrings/docker.asc
+  ansible.builtin.rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
     state: present
-    enabled: true
 
-- name: Install the Docker Packages
+- name: Add the Docker repository
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: "0644"
+
+- name: Install the Docker packages
   ansible.builtin.dnf:
     name:
       - docker-ce
