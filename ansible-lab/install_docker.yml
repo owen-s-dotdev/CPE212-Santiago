@@ -4,12 +4,12 @@
   become: true
 
   pre_tasks:
-    - name: Update and upgrade apt packages
+    - name: Update apt packages
       ansible.builtin.apt:
         update_cache: yes
       when: ansible_os_family == 'Debian'
 
-    - name: Update and upgrade dnf packages
+    - name: Update dnf packages
       ansible.builtin.dnf:
         update_cache: yes
       when: ansible_os_family == 'RedHat'
