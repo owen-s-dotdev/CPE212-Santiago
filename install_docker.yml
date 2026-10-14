@@ -1,0 +1,23 @@
+---
+# /home/install_docker.yml
+- hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update and upgrade apt packages
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_os_family == 'Debian'
+    - name: Update and upgrade dnf packages
+      ansible.builtin.dnf:
+        update_cache: yes
+        name: '*'
+        state: latest
+      when: ansible_os_family == 'RedHat'
+
+  tasks:
+    - role: docker
+      tags: docker
+    
+    

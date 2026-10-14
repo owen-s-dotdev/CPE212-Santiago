@@ -1,5 +1,4 @@
 #SPDX-License-Identifier: MIT-0
 ---
-# tasks file for docker
 - name: Install Docker
   ansible.builtin.include_tasks: "install_{{ ansible_os_family | lower }}.yml"
