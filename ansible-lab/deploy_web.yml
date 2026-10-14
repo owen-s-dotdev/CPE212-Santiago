@@ -1,0 +1,18 @@
+---
+- name: Build and run the Apache container
+  hosts: web_servers
+  become: true
+
+  roles:
+    - docker
+    - container_app
+
+  post_tasks:
+    - name: Check that Apache responds
+      ansible.builtin.uri:
+        url: "http://localhost:8080"
+        status_code: 200
+      retries: 5
+      delay: 3
+      register: web_check
+      until: web_check.status == 200
