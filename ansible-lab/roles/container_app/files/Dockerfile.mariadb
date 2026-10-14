@@ -1,5 +1,14 @@
 FROM ubuntu:26.04
 
-ENV DEBIAN_FRONTEND==noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends mariadb-server \
+    && rm -rf /var/lib/apt/lists/* \
+    && sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf \
+    && mkdir -p /run/mysqld \
+    && chown mysql:mysql /run/mysqld
+
+EXPOSE 3306
+
+CMD ["mariadbd", "--user=mysql"]
