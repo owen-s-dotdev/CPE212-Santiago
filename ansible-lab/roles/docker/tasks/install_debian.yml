@@ -65,3 +65,8 @@
   loop:
     - docker.service
     - docker.socket
+
+- name: Install the Docker SDK for Python
+  ansible.builtin.apt:
+    name: python3-docker
+    state: present
