@@ -57,14 +57,6 @@
     state: present
     update_cache: true
   
-- name: Start and enable Docker
-  ansible.builtin.systemd_service:
-    name: "{{ item }}"
-    state: started
-    enabled: true
-  loop:
-    - docker.service
-    - docker.socket
 
 - name: Install the Docker SDK for Python
   ansible.builtin.apt:
