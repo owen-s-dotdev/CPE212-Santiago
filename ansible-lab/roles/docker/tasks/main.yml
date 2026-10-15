@@ -4,7 +4,7 @@
   ansible.builtin.include_tasks: "install_{{ ansible_os_family | lower }}.yml"
 
 - name: Enable and start Docker and its socket
-  ansible.builtin.systemd_service:
+  ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
     enabled: true
