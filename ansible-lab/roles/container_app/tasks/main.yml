@@ -35,3 +35,12 @@
     restart_policy: unless-stopped
     published_ports: "{{ app_ports }}"
     recreate: "{{ image_result is changed }}"
+
+- name: Open Firewall
+  ansible.posix.firewalld:
+    port: "{{ item.split(':')[0] }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ app_ports }}"
+  when: ansible_os_family == "Redhat"
