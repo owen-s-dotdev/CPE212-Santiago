@@ -3,8 +3,12 @@
   hosts: web_servers
   become: true
 
+  pre_tasks:
+    - name: Check Docker if it is installed
+      ansible.builtin.command: docker --version
+      changed_when: false
+
   roles:
-    - docker
     - container_app
 
   post_tasks:
