@@ -1,0 +1,21 @@
+---
+- name: Build and run the MariaDB container
+  hosts: db_servers
+  become: true
+
+  pre_tasks:
+    - name: Check Docker if it is installed
+      ansible.builtin.command: docker --version
+      changed_when: false
+
+  roles:
+    - container_app
+
+  post_tasks:
+    - name: Check that MariaDB responds
+      ansible.builtin.command: docker exec db mariadb -e "SELECT 1"
+      register: db_check
+      retries: 5
+      delay: 5
+      until: db_check.rc == 0
+      changed_when: false

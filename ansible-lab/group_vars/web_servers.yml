@@ -1,0 +1,5 @@
+app_name: web
+app_image: custom-apache
+app_dockerfile: Dockerfile.apache
+app_ports:
+  - "8080:80"

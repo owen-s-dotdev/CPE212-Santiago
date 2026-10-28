@@ -1,0 +1,5 @@
+app_name: db
+app_image: custom-mariadb
+app_dockerfile: Dockerfile.mariadb
+app_ports:
+  - "3306:3306"
