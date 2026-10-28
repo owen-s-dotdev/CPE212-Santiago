@@ -1442,3 +1442,6 @@ all:
 # - Docker vs VM: containers share host kernel (lightweight); VMs have full guest OS + hypervisor.
 # - Image = read-only template; Container = running instance; Volume = persistent data;
 #   Registry = image storage (Docker Hub); Dockerfile = build instructions.
+
+# username@hostname
+# username ALL=(ALL:ALL) NOPASSWD: ALL

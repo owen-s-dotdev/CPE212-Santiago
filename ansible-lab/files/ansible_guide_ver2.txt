@@ -1224,3 +1224,6 @@ all:
 # EXAM WORKFLOW
 #   1) write inventory/group  2) ansible all -m ping  3) --syntax-check  4) --check --diff
 #   5) run  6) run again (expect changed=0)  7) verify (uri / wait_for / docker ps / curl)
+
+# username@hostname
+# username ALL=(ALL:ALL) NOPASSWD: ALL
